@@ -1,157 +1,149 @@
-# 🛡️ Helm Deploy Lab – Instant Kubernetes App Deployment
+# Helm Deploy Lab
 
-![Helm Ready](https://img.shields.io/badge/Helm-chart--ready-0A6EBD?logo=helm)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-lab--tested-326CE5?logo=kubernetes)
-![Minikube](https://img.shields.io/badge/Minikube-local--dev--tested-yellow?logo=linux)
-![GitLab CI](https://img.shields.io/badge/GitLab%20CI-manual--demo-blueviolet?logo=gitlab)
-![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
-![Portfolio](https://img.shields.io/badge/Portfolio-Showcase-important)
-![Open to Work](https://img.shields.io/badge/Open--to--Work-Yes-brightgreen?style=flat-square)
+A Kubernetes monitoring deployment lab using Helm, Minikube or K3s, Prometheus, Grafana, and Alertmanager.
 
+This repository demonstrates how to package and deploy a working observability stack in a lightweight Kubernetes environment while keeping the workflow simple enough to reproduce locally.
 
-This repository demonstrates a **real-world monitoring stack deployment** using Helm on a local Kubernetes cluster (Minikube or K3s).
-It’s designed to showcase production-ready DevOps workflows — even in a small/local environment.
+## Overview
 
-> Author: **Nuntin Padmadin**  
-> GitHub: [github.com/Nuntin](https://github.com/Nuntin)
+The lab focuses on practical Kubernetes deployment skills:
 
----
+- Installing a monitoring stack with Helm
+- Running the stack on Minikube or K3s
+- Managing deployment values through Helm configuration
+- Validating Prometheus, Grafana, and Alertmanager components
+- Documenting deployment, uninstall, and dashboard usage
 
-## 📆 Tech Stack
+## Technology Stack
 
-| Component     | Description                             |
-|---------------|-----------------------------------------|
-| K3s / Minikube| Lightweight Kubernetes distributions     |
-| Helm          | Kubernetes package manager               |
-| Prometheus    | Metrics and alerting                     |
-| Grafana       | Visualization and dashboards             |
-| Alertmanager  | Notification and alert routing           |
+| Component | Purpose |
+|---|---|
+| Minikube / K3s | Local or lightweight Kubernetes runtime |
+| Helm | Kubernetes package management |
+| Prometheus | Metrics collection and alerting |
+| Grafana | Dashboard visualization |
+| Alertmanager | Alert routing and notification handling |
+| GitLab CI/CD | Optional pipeline demonstration |
 
----
+## Project Structure
 
-## 📁 Project Structure
-
-```
+```text
 helm-deploy-lab/
-├── values-prod.yaml               # Helm values for production-like settings
-├── k3s-bootstrap.sh               # Script to install K3s and deploy monitoring
-├── uninstall.sh                   # Script to uninstall monitoring stack
+├── values-prod.yaml
+├── k3s-bootstrap.sh
+├── uninstall.sh
 ├── scripts/
-│   └── deploy-local.sh            # Minikube deployment automation
-├── .gitlab-ci.yml                 # GitLab CI pipeline config
-├── README.md                      # Main description and usage
-├── LICENSE                        # MIT license
-├── docs/
-│   ├── bootstrap.md               # K3s-based deployment guide
-│   ├── minikube-monitoring.md     # Minikube deployment walkthrough
-│   ├── deploy.md                  # General deployment guide
-│   ├── uninstall.md               # Uninstall documentation
-│   ├── grafana-dashboards.md      # Dashboard examples and insights
-│   ├── scenarios.md               # Real-world use cases
-│   └── images/
-│       ├── grafana-sli.png
-│       ├── prometheus-overview.png
-│       └── grafana-lab-demo.gif   # GIF demo of Grafana in action
+│   └── deploy-local.sh
+├── .gitlab-ci.yml
+├── README.md
+├── LICENSE
+└── docs/
+    ├── bootstrap.md
+    ├── minikube-monitoring.md
+    ├── deploy.md
+    ├── uninstall.md
+    ├── grafana-dashboards.md
+    ├── scenarios.md
+    └── images/
+        ├── grafana-sli.png
+        ├── prometheus-overview.png
+        └── grafana-lab-demo.gif
 ```
 
----
+## Quick Start
 
-## 🛠️ Quick Start (Minikube Example)
+Start Minikube:
 
 ```bash
-# Start Minikube
 minikube start --memory=4096 --cpus=2
+```
 
-# Add Helm repo
+Add the Prometheus community Helm repository:
+
+```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
+```
 
-# Install the monitoring stack
+Install or upgrade the monitoring stack:
+
+```bash
 helm upgrade --install monitor prometheus-community/kube-prometheus-stack \
   -f values-prod.yaml
+```
 
-# Forward Grafana port (default: 3000)
+Forward Grafana to the local machine:
+
+```bash
 kubectl port-forward svc/monitor-grafana 3000:80 -n default
 ```
 
----
+## Grafana Access
 
-## 🔐 Grafana Login
+Retrieve the Grafana admin password:
 
 ```bash
-kubectl get secret monitor-grafana -o jsonpath="{.data.admin-password}" | base64 -d
-# username: admin
+kubectl get secret monitor-grafana \
+  -o jsonpath="{.data.admin-password}" | base64 -d
 ```
 
----
+Default username:
 
-## 📚 Documentation
+```text
+admin
+```
 
-| Topic                  | Path                                 |
-|------------------------|--------------------------------------|
-| K3s Bootstrap Guide    | docs/bootstrap.md                    |
-| Minikube Walkthrough   | docs/minikube-monitoring.md          |
-| Generic Deploy Guide   | docs/deploy.md                       |
-| Grafana Dashboards     | docs/grafana-dashboards.md           |
-| Uninstall Steps        | docs/uninstall.md                    |
-| Use Case Scenarios     | docs/scenarios.md                    |
+## Documentation
 
----
+| Topic | Path |
+|---|---|
+| K3s bootstrap guide | `docs/bootstrap.md` |
+| Minikube walkthrough | `docs/minikube-monitoring.md` |
+| General deployment guide | `docs/deploy.md` |
+| Grafana dashboard notes | `docs/grafana-dashboards.md` |
+| Uninstall procedure | `docs/uninstall.md` |
+| Scenario examples | `docs/scenarios.md` |
 
-## 📸 Screenshots & Demos
+## Screenshots and Demo
 
 <p align="center">
   <img src="docs/images/grafana-lab-demo.gif" width="700"/>
-  <br><em>Grafana Login + Dashboard Demo</em>
+  <br><em>Grafana login and dashboard demonstration</em>
 </p>
 
 <p align="center">
   <img src="docs/images/grafana-sli.png" width="600"/>
-  <br><em>Grafana SLI Dashboard</em>
+  <br><em>Grafana SLI dashboard</em>
 </p>
 
 <p align="center">
   <img src="docs/images/prometheus-overview.png" width="600"/>
-  <br><em>Prometheus Metrics Overview</em>
+  <br><em>Prometheus metrics overview</em>
 </p>
 
----
+## Validation
 
-## 🌟 Why This Matters
+A successful deployment should confirm:
 
-Even without cloud budget or large infra, you can demonstrate **DevOps readiness** through local deployment labs. 
-This lab shows:
+- Helm release is installed successfully
+- Prometheus pods are running
+- Grafana service is reachable through port forwarding
+- Dashboards load without missing datasource errors
+- Uninstall steps remove the lab cleanly
 
-- Helm-based production installs
-- Working Kubernetes setup (Minikube/K3s)
-- Real monitoring with Grafana + Prometheus
-- Documentation-first and CI-driven development
+## Notes
 
----
+- This repository is intended for local or lab environments.
+- `values-prod.yaml` is production-like for demonstration, not a hardened production baseline.
+- Review storage, ingress, authentication, alert routing, and resource limits before adapting this to a shared cluster.
 
-## 🤝 License
+## License
 
-MIT — see [LICENSE](LICENSE)
+MIT. See [LICENSE](LICENSE).
 
----
+## Author
 
-## 👤 About Me – DevOps Engineer (Open to Work)
-Hi, I'm Nuntin – a DevOps / Infrastructure Engineer from Thailand 🇹🇭
-Currently looking for new opportunities in the field of DevOps and Cloud Infrastructure.
+Nuntin Padmadin
 
-- Terraform, Ansible, GitLab CI/CD, Docker, Kubernetes
-- AWS: EC2, S3, IAM, RDS, VPC, CloudFront, Route53
-- Real use-case demo → see this repo!
-
-🏠 [All My DevOps Labs](https://github.com/nuntin?tab=repositories)
-
-💼 LinkedIn: [linkedin.com/in/nuntin-padmadin-97b708145](https://www.linkedin.com/in/nuntin-padmadin-97b708145/)
-
-📧 Email: nuntin.p@gmail.com
-
----
-
-**SEO Keywords:**  
-`helm lab`, `k8s monitoring minikube`, `devops portfolio`, `grafana prometheus helm`, `k3s ci demo`, `open to work devops`
-
----
+- GitHub: [github.com/Nuntin](https://github.com/Nuntin)
+- LinkedIn: [linkedin.com/in/nuntin-padmadin-97b708145](https://www.linkedin.com/in/nuntin-padmadin-97b708145/)
