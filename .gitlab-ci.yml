@@ -1,6 +1,7 @@
 stages:
   - validate
   - lint
+  - render
 
 validate_yaml:
   stage: validate
@@ -12,7 +13,7 @@ validate_yaml:
     - main
 
 helm_lint:
-  stage: validate
+  stage: lint
   image: alpine/helm:3.14.4
   script:
     - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -25,15 +26,21 @@ lint_scripts:
   stage: lint
   image: koalaman/shellcheck-alpine
   script:
-    - shellcheck k3s-bootstrap.sh uninstall.sh || true
+    - shellcheck k3s-bootstrap.sh uninstall.sh scripts/deploy-local.sh scripts/smoke-test.sh
   only:
     - main
 
-mock_deploy_log:
-  stage: lint
-  image: alpine
+render_manifests:
+  stage: render
+  image: alpine/helm:3.14.4
   script:
-    - echo "This step simulates local deploy via deploy-local.sh"
-    - echo "To test manually: bash scripts/deploy-local.sh"
+    - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    - helm repo update
+    - mkdir -p rendered
+    - helm template monitor prometheus-community/kube-prometheus-stack -f values-prod.yaml > rendered/monitoring.yaml
+  artifacts:
+    paths:
+      - rendered/monitoring.yaml
+    expire_in: 1 week
   only:
     - main
