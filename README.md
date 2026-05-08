@@ -2,7 +2,7 @@
 
 A Kubernetes monitoring deployment lab using Helm, Minikube or K3s, Prometheus, Grafana, and Alertmanager.
 
-This repository demonstrates how to package and deploy a working observability stack in a lightweight Kubernetes environment while keeping the workflow simple enough to reproduce locally.
+This repository demonstrates how to deploy and validate a working observability stack in a lightweight Kubernetes environment while keeping the workflow simple enough to reproduce locally.
 
 ## Overview
 
@@ -11,10 +11,11 @@ The lab focuses on practical Kubernetes deployment skills:
 - Installing a monitoring stack with Helm
 - Running the stack on Minikube or K3s
 - Managing deployment values through Helm configuration
+- Rendering manifests in CI before applying anything to a cluster
 - Validating Prometheus, Grafana, and Alertmanager components
-- Documenting deployment, uninstall, and dashboard usage
+- Separating deployment from smoke testing
 
-## Technology Stack
+## Technology stack
 
 | Component | Purpose |
 |---|---|
@@ -23,9 +24,9 @@ The lab focuses on practical Kubernetes deployment skills:
 | Prometheus | Metrics collection and alerting |
 | Grafana | Dashboard visualization |
 | Alertmanager | Alert routing and notification handling |
-| GitLab CI/CD | Optional pipeline demonstration |
+| GitLab CI/CD | Validation, linting, and manifest rendering |
 
-## Project Structure
+## Project structure
 
 ```text
 helm-deploy-lab/
@@ -33,57 +34,48 @@ helm-deploy-lab/
 ├── k3s-bootstrap.sh
 ├── uninstall.sh
 ├── scripts/
-│   └── deploy-local.sh
+│   ├── deploy-local.sh
+│   └── smoke-test.sh
 ├── .gitlab-ci.yml
 ├── README.md
 ├── LICENSE
 └── docs/
-    ├── bootstrap.md
-    ├── minikube-monitoring.md
-    ├── deploy.md
-    ├── uninstall.md
-    ├── grafana-dashboards.md
-    ├── scenarios.md
-    └── images/
-        ├── grafana-sli.png
-        ├── prometheus-overview.png
-        └── grafana-lab-demo.gif
 ```
 
-## Quick Start
+## Quick start
 
-Start Minikube:
+Deploy locally:
 
 ```bash
-minikube start --memory=4096 --cpus=2
+chmod +x scripts/*.sh
+./scripts/deploy-local.sh
 ```
 
-Add the Prometheus community Helm repository:
+Run a smoke test after deployment:
 
 ```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+./scripts/smoke-test.sh default
 ```
 
-Install or upgrade the monitoring stack:
-
-```bash
-helm upgrade --install monitor prometheus-community/kube-prometheus-stack \
-  -f values-prod.yaml
-```
-
-Forward Grafana to the local machine:
+Open Grafana manually when needed:
 
 ```bash
 kubectl port-forward svc/monitor-grafana 3000:80 -n default
 ```
 
-## Grafana Access
+Then open:
+
+```text
+http://127.0.0.1:3000
+```
+
+## Grafana access
 
 Retrieve the Grafana admin password:
 
 ```bash
 kubectl get secret monitor-grafana \
+  -n default \
   -o jsonpath="{.data.admin-password}" | base64 -d
 ```
 
@@ -92,6 +84,30 @@ Default username:
 ```text
 admin
 ```
+
+## CI pipeline
+
+The GitLab pipeline is intentionally validation-focused. It does not apply manifests to a real cluster.
+
+| Job | Stage | Purpose |
+|---|---|---|
+| `validate_yaml` | `validate` | Runs YAML lint against `values-prod.yaml` |
+| `helm_lint` | `lint` | Runs Helm lint against kube-prometheus-stack with this repo's values |
+| `lint_scripts` | `lint` | Runs ShellCheck against helper scripts |
+| `render_manifests` | `render` | Renders manifests and stores them as a CI artifact |
+
+This keeps the repository safe for portfolio demonstration because CI proves the configuration can render without requiring cluster credentials.
+
+## Validation
+
+A successful local deployment should confirm:
+
+- Helm release is installed successfully.
+- Grafana deployment reaches rollout success.
+- Prometheus stack pods are running.
+- Grafana service exists.
+- `scripts/smoke-test.sh` can reach the Grafana login endpoint through port forwarding.
+- Uninstall steps remove the lab cleanly.
 
 ## Documentation
 
@@ -104,32 +120,9 @@ admin
 | Uninstall procedure | `docs/uninstall.md` |
 | Scenario examples | `docs/scenarios.md` |
 
-## Screenshots and Demo
+## Screenshots and demo
 
-<p align="center">
-  <img src="docs/images/grafana-lab-demo.gif" width="700"/>
-  <br><em>Grafana login and dashboard demonstration</em>
-</p>
-
-<p align="center">
-  <img src="docs/images/grafana-sli.png" width="600"/>
-  <br><em>Grafana SLI dashboard</em>
-</p>
-
-<p align="center">
-  <img src="docs/images/prometheus-overview.png" width="600"/>
-  <br><em>Prometheus metrics overview</em>
-</p>
-
-## Validation
-
-A successful deployment should confirm:
-
-- Helm release is installed successfully
-- Prometheus pods are running
-- Grafana service is reachable through port forwarding
-- Dashboards load without missing datasource errors
-- Uninstall steps remove the lab cleanly
+Screenshots or GIFs should only be referenced here when the files exist under `docs/images/`.
 
 ## Notes
 
@@ -140,10 +133,3 @@ A successful deployment should confirm:
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-## Author
-
-Nuntin Padmadin
-
-- GitHub: [github.com/Nuntin](https://github.com/Nuntin)
-- LinkedIn: [linkedin.com/in/nuntin-padmadin-97b708145](https://www.linkedin.com/in/nuntin-padmadin-97b708145/)
